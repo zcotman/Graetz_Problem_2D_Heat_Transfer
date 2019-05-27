@@ -1,0 +1,175 @@
+SHELL=/bin/sh
+
+#***************************************************************************
+# Note: Comments start with #.  
+#       $(FOOBAR) means: evaluate the variable defined by FOOBAR= (something).
+#
+# This file contains a set of rules used by the "make" command.
+#
+# This makefile $(MAKEFILE) tells "make" how the executable $(COMMAND) 
+#   should be created from the source fileS $(SRCS) and the header files 
+#   $(HDRS) via the object file $(OBJS); 
+#
+# To use this makefile, type the command:
+#        
+#		"make -f make_program"
+#   
+#	where make_program should be replaced by the name of the makefile.
+#
+#****************************************************************************
+#
+# Programmer:  Dick Furnstahl (furnstahl.1@osu.edu)
+#       Edit:  Zach Cotman (cotman.6@osu.edu)
+#
+# Latest revision: December 2018
+# 
+# Notes:
+#  * If you are ok with the default options for compiling and linking, you
+#     only need to change the entries in section 1.
+#
+#  * Defining BASE determines the name for the makefile (prepend "make_"), 
+#     executable  (append ".x"), 
+#     zip archive (append ".zip") 
+#     gzipped tar file (append ".tar.gz"). 
+#
+#  * To remove the executable and object files, type the command:
+#     
+#			"make -f $(MAKEFILE) clean"
+#
+#  * To create a zip archive with name $(BASE).zip containing this 
+#     makefile and the SRCS and HDRS files, type the command:
+#        
+#			"make -f $(MAKEFILE) zip"
+#
+#  * To create a gzipped tar file with name $(BASE).tar.gz containing this 
+#     makefile and the source and header files, type the command:
+#          
+#			"make -f $(MAKEFILE) tarz"
+#
+#  NOTE:
+#	Continuation lines are indicated by \ with no space after it.  
+#     If you get a "missing separator" error, it is probably because there
+#     is a space after a \ somewhere!!!
+#
+
+###########################################################################
+# SECTION 1: Specify base name, source files, header files, input files
+########################################################################### 
+
+# ******************** Base Name ***********************
+
+BASE=  graetz_problem
+
+# ****************** Source Files **********************
+
+# Put all C++ (or other) source files here.  
+
+SRCS= \
+graetz_problem.cpp
+
+# ****************** Header Files **********************
+
+HDRS= \
+input_parameters.h
+
+# ****************** Input Files ***********************
+
+# Put any input files you want to be saved in tarballs (e.g., sample files).
+INPFILE= \
+
+
+###########################################################################
+# SECTION 2: Generate names for object files, makefile, command to execute, tar file
+########################################################################### 
+
+# *** YOU should not edit these lines unless to change naming conventions ***
+
+OBJS= $(addsuffix .o, $(basename $(SRCS)))
+MAKEFILE= make_$(BASE)
+COMMAND=  $(BASE).x
+TARFILE= $(BASE).tar.gz
+ZIPFILE= $(BASE).zip
+
+###########################################################################
+# SECTION 3. Commands and options for different compilers
+########################################################################### 
+
+# Compiler parameters
+#
+# CXX           Name of the C++ compiler to use
+# CFLAGS        Flags to the C++ compiler
+# CWARNS        Warning options for C++ compiler
+# F90           Name of the fortran compiler to use (if relevant) 
+# FFLAGS        Flags to the fortran compiler 
+# LDFLAGS       Flags to the loader
+# LIBS          A list of libraries 
+
+CXX       = g++
+CFLAGS    = -g -O2
+CWARNS    =  -Wall -W -Wshadow -fno-common 
+MOREFLAGS = -Wpedantic -Wpointer-arith -Wcast-qual -Wcast-align \
+            -Wwrite-strings -fshort-enums -Werror
+
+# add relevant libraries and link options
+
+LIBS    =           
+LDFLAGS = -lgsl -lgslcblas 
+ 
+###########################################################################
+# SECTION 4. Instructions to compile and link, with dependencies
+###########################################################################
+
+all:	$(COMMAND) 
+
+.SUFFIXES:
+.SUFFIXES: .o .mod .f90 .f .cpp
+
+#%.o:   %.mod ?????????
+
+# This is the command to link all of the object files together. 
+#  For fortran, replace CXX by F90.
+
+$(COMMAND): $(OBJS) $(MAKEFILE) 
+	$(CXX) -o $(COMMAND) $(OBJS) $(LDFLAGS) $(LIBS)
+
+# Command to make object (.o) files from C++ source files (assumed to be .cpp).
+# Add $(MOREFLAGS) if you want additional warning options.
+
+.cpp.o: $(HDRS) $(MAKEFILE)
+	$(CXX) -c $(CFLAGS) $(CWARNS) -o $@ $<
+
+# Commands to make object (.o) files from Fortran-90 (or beyond) and
+#  Fortran-77 source files (.f90 and .f, respectively).
+
+.f90.mod:
+	$(F90) -c $(F90FLAGS) -o $@ $< 
+ 
+.f90.o: 
+	$(F90) -c $(F90FLAGS) -o $@ $<
+ 
+.f.o:   
+	$(F90) -c $(FFLAGS) -o $@ $<
+      
+##########################################################################
+# SECTION 5. Additional tasks      
+##########################################################################
+      
+# Delete the program and the object files (and any module files)
+
+clean:
+	/bin/rm -f $(COMMAND) $(OBJS)
+	/bin/rm -f $(MODIR)/*.mod
+ 
+# Pack up the code in a compressed gnu tar file
+
+tarz:
+	tar cfvz $(TARFILE) $(MAKEFILE) $(SRCS) $(HDRS) $(MODIR) $(INPFILE) 
+
+# Pack up the code in a zip archive
+
+zip:
+	zip -r $(ZIPFILE) $(MAKEFILE) $(SRCS) $(HDRS) $(MODIR) $(INPFILE) 
+
+##########################################################################
+# That's all, folks!     
+##########################################################################
